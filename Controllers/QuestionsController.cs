@@ -1,0 +1,88 @@
+﻿using KaznacheystvoCourse.DTO.Option;
+using KaznacheystvoCourse.DTO.Question;
+using KaznacheystvoCourse.Interfaces.ISevices;
+using Microsoft.AspNetCore.Mvc;
+
+namespace KaznacheystvoCourse.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class QuestionsController : ControllerBase
+{
+    private readonly IQuestionService _questionService;
+
+    public QuestionsController(IQuestionService questionService)
+    {
+        _questionService = questionService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions(int materialId)
+    {
+        var questions = await _questionService.GetQuestionsByMaterialAsync(materialId);
+        return Ok(questions);
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<ActionResult<QuestionDto>> GetQuestion(int materialId, int id)
+    {
+        var question = await _questionService.GetQuestionAsync(id);
+        return question.LearnMaterialId == materialId 
+            ? Ok(question) 
+            : NotFound();
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<QuestionDto>> CreateQuestion(
+        int materialId,
+        [FromBody] CreateQuestionDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        try
+        {
+            var question = await _questionService.CreateQuestionAsync(materialId, dto);
+            return CreatedAtAction(nameof(GetQuestion), 
+                new { materialId, id = question.Id }, question);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateQuestion(int id, UpdateQuestionDto dto)
+    {
+        if (!ModelState.IsValid) 
+            return BadRequest(ModelState);
+
+        try
+        {
+            await _questionService.UpdateQuestionAsync(id, dto); // Передаем ID из URL
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteQuestion(int id)
+    {
+        try
+        {
+            await _questionService.DeleteQuestionAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+}
