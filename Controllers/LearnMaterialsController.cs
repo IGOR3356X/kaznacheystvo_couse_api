@@ -1,5 +1,6 @@
 ﻿using KaznacheystvoCourse.DTO.LearnMaterial;
 using KaznacheystvoCourse.Interfaces.ISevices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KaznacheystvoCourse.Controllers;
@@ -16,6 +17,7 @@ public class LearnMaterialsController: ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<ActionResult<LearnMaterialDto>> GetMaterial(int id)
     {
         var material = await _materialService.GetMaterialByIdAsync(id);
@@ -23,6 +25,7 @@ public class LearnMaterialsController: ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<ActionResult<LearnMaterialDto>> CreateMaterial([FromForm]CreateLearnMaterialDto materialDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -40,6 +43,7 @@ public class LearnMaterialsController: ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> UpdateMaterial(int id,[FromForm] CreateLearnMaterialDto materialDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -60,6 +64,7 @@ public class LearnMaterialsController: ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> DeleteMaterial(int id)
     {
         await _materialService.DeleteMaterialAsync(id);

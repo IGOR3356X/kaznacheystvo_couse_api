@@ -120,10 +120,20 @@ public class TestService : ITestService
     public async Task<TestResultDto> GetTestResultAsync(int scoreId)
     {
         var score = await _scoreRepository.GetQueryable()
+            .Include(s => s.User)
             .Include(s => s.Responses)
+            .ThenInclude(r => r.Question)
+            .ThenInclude(q => q.Options)
+            .Include(s => s.Responses)
+            .ThenInclude(r => r.ResponseOptions)
+            .ThenInclude(ro => ro.Option)
+            .Include(s => s.Responses)
+            .ThenInclude(r => r.Question)
+            .ThenInclude(q => q.CorrectAnswers)
             .FirstOrDefaultAsync(s => s.Id == scoreId);
 
-        if (score == null) throw new KeyNotFoundException("Test attempt not found");
+        if (score == null) 
+            throw new KeyNotFoundException("Test attempt not found");
 
         var totalQuestions = await _questionRepository.GetQueryable()
             .CountAsync(q => q.LearnMaterialId == score.LearnMaterialId);
@@ -134,10 +144,70 @@ public class TestService : ITestService
             TotalScore = score.Score1,
             CorrectAnswers = score.Responses.Count(r => r.IsCorrect),
             TotalQuestions = totalQuestions,
-            SubmittedAt = score.CreatedAt
+            SubmittedAt = score.CreatedAt,
+            Responses = score.Responses.Select(r => new UserQuestionResponseDto
+            {
+                QuestionId = r.QuestionId,
+                QuestionText = r.Question.QuestionText,
+                QuestionType = r.Question.QuestionType,
+                UserAnswer = r.UserAnswer,
+                IsCorrect = r.IsCorrect,
+                Points = r.Points,
+                SelectedOptions = r.ResponseOptions.Select(ro => new OptionDto
+                {
+                    Id = ro.Option.Id,
+                    Text = ro.Option.OptionText,
+                    IsCorrect = r.Question.CorrectAnswers
+                        .Any(ca => ca.OptionId == ro.Option.Id)
+                }).ToList()
+            }).ToList()
         };
     }
 
+    public async Task<IEnumerable<UserAttemptDto>> GetUserAttemptsForMaterialAsync(int userId, int materialId)
+    {
+        var materialExists = await _context.LearnMaterials.AnyAsync(lm => lm.Id == materialId);
+        if (!materialExists)
+            throw new KeyNotFoundException("Учебный материал не найден");
+
+        var attempts = await _context.Scores
+            .Include(s => s.User)
+            .Include(s => s.Responses)
+            .ThenInclude(r => r.Question)
+            .ThenInclude(q => q.Options)
+            .Include(s => s.Responses)
+            .ThenInclude(r => r.ResponseOptions)
+            .ThenInclude(ro => ro.Option)
+            .Where(s => s.LearnMaterialId == materialId && s.UserId == userId)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync();
+
+        return attempts.Select(attempt => new UserAttemptDto
+        {
+            UserId = attempt.UserId,
+            UserName = attempt.User.FullName,
+            TotalScore = attempt.Score1,
+            Photo = attempt.User.Photo,
+            AttemptDate = attempt.CreatedAt,
+            Responses = attempt.Responses.Select(r => new UserQuestionResponseDto
+            {
+                QuestionId = r.QuestionId,
+                QuestionText = r.Question.QuestionText,
+                QuestionType = r.Question.QuestionType,
+                UserAnswer = r.UserAnswer,
+                IsCorrect = r.IsCorrect,
+                Points = r.Points,
+                SelectedOptions = r.ResponseOptions.Select(ro => new OptionDto
+                {
+                    Id = ro.Option.Id,
+                    Text = ro.Option.OptionText,
+                    IsCorrect = r.Question.CorrectAnswers
+                        .Any(ca => ca.OptionId == ro.Option.Id)
+                }).ToList()
+            }).ToList()
+        });
+    }
+    
     public async Task<IEnumerable<UserAttemptDto>> GetAllResponsesForMaterialAsync(int materialId)
     {
         var materialExists = await _context.LearnMaterials.AnyAsync(lm => lm.Id == materialId);
@@ -163,6 +233,7 @@ public class TestService : ITestService
             UserId = attempt.UserId,
             UserName = attempt.User.FullName,
             TotalScore = attempt.Score1,
+            Photo = attempt.User.Photo,
             AttemptDate = attempt.CreatedAt,
             Responses = attempt.Responses.Select(r => new UserQuestionResponseDto
             {

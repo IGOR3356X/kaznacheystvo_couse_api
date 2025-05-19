@@ -4,49 +4,92 @@ using KaznacheystvoCourse.DTO.Course;
 using KaznacheystvoCourse.Interfaces.ISevices;
 using KaznacheystvoCourse.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace KaznacheystvoCalendar.Services;
 
-public class CourseService: ICourseService
+public class CourseService : ICourseService
 {
     private readonly IGenericRepository<Course> _courseRepository;
+    private readonly IGenericRepository<Score> _scoreRepository;
 
-    public CourseService(IGenericRepository<Course> courseRepository)
+    public CourseService(IGenericRepository<Course> courseRepository, IGenericRepository<Score> scoreRepository)
     {
         _courseRepository = courseRepository;
+        _scoreRepository = scoreRepository;
     }
 
-    public async Task<PaginatedResponse<CourseDto>> GetAllCoursesAsync(QueryObject query)
+    public async Task<PaginatedResponse<CourseDto>> GetAllCoursesAsync(QueryObject query, int userId)
     {
-        var coursesQuery = _courseRepository.GetQueryable();
+        // Базовый запрос для всех курсов
+        var coursesQuery = _courseRepository.GetQueryable()
+            .Where(x=> x.Ispublish == true)
+            .Include(c => c.Modules)
+            .ThenInclude(m => m.LearnMaterials);
 
-        // Поиск по всем текстовым полям курса
+        // Фильтрация по поиску
         if (!string.IsNullOrEmpty(query.Search))
         {
             var searchLower = query.Search.ToLower();
-            coursesQuery = coursesQuery.Where(c => 
+            coursesQuery = (IIncludableQueryable<Course, ICollection<LearnMaterial>>)coursesQuery.Where(c =>
                 c.Header.ToLower().Contains(searchLower) ||
-                c.Description.ToLower().Contains(searchLower) ||
-                c.Id.ToString().Contains(searchLower));
+                c.Description.ToLower().Contains(searchLower));
         }
 
-        // Подсчет общего количества элементов ДО пагинации
+        // Пагинация
         var totalCount = await coursesQuery.CountAsync();
         var totalPages = (int)Math.Ceiling((double)totalCount / query.PageSize);
 
-        // Применение пагинации
-        var skipNumber = (query.PageNumber - 1) * query.PageSize;
         var courses = await coursesQuery
-            .OrderByDescending(c => c.Id) // или другая логика сортировки
-            .Skip(skipNumber)
+            .OrderByDescending(c => c.Id)
+            .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync();
+
+        // Получаем ВСЕ материалы всех курсов
+        var allMaterialIds = courses
+            .SelectMany(c => c.Modules)
+            .SelectMany(m => m.LearnMaterials)
+            .Select(lm => lm.Id)
+            .Distinct()
+            .ToList();
+
+        // Получаем завершенные материалы текущего пользователя
+        var completedMaterials = await _scoreRepository.GetQueryable()
+            .Where(s => s.UserId == userId && allMaterialIds.Contains(s.LearnMaterialId))
+            .Select(s => s.LearnMaterialId)
+            .Distinct()
+            .ToListAsync();
+
+        var completedSet = new HashSet<int>(completedMaterials);
+
+        // Маппинг курсов с прогрессом
+        var courseDtos = courses.Select(course =>
+        {
+            var totalMaterials = course.Modules
+                .Sum(m => m.LearnMaterials.Count);
+
+            var completed = course.Modules
+                .SelectMany(m => m.LearnMaterials)
+                .Count(lm => completedSet.Contains(lm.Id));
+
+            return new CourseDto
+            {
+                Id = course.Id,
+                Header = course.Header,
+                Description = course.Description,
+                IsPublished = course.Ispublish,
+                Progress = totalMaterials > 0
+                    ? (int)Math.Round((double)completed / totalMaterials * 100)
+                    : 0
+            };
+        }).ToList();
 
         return new PaginatedResponse<CourseDto>
         {
             TotalCount = totalCount,
             TotalPages = totalPages,
-            Items = courses.Select(MapToDto).ToList()
+            Items = courseDtos
         };
     }
 

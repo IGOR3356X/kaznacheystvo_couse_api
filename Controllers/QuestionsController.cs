@@ -1,6 +1,7 @@
 ﻿using KaznacheystvoCourse.DTO.Option;
 using KaznacheystvoCourse.DTO.Question;
 using KaznacheystvoCourse.Interfaces.ISevices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KaznacheystvoCourse.Controllers;
@@ -17,6 +18,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions(int materialId)
     {
         var questions = await _questionService.GetQuestionsByMaterialAsync(materialId);
@@ -24,6 +26,7 @@ public class QuestionsController : ControllerBase
     }
     
     [HttpGet("{id}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<ActionResult<QuestionDto>> GetQuestion(int materialId, int id)
     {
         var question = await _questionService.GetQuestionAsync(id);
@@ -33,6 +36,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<ActionResult<QuestionDto>> CreateQuestion(
         int materialId,
         [FromBody] CreateQuestionDto dto)
@@ -52,6 +56,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> UpdateQuestion(int id, UpdateQuestionDto dto)
     {
         if (!ModelState.IsValid) 
@@ -73,6 +78,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> DeleteQuestion(int id)
     {
         try

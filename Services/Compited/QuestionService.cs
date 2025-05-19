@@ -62,7 +62,8 @@ public class QuestionService : IQuestionService
             QuestionText = dto.QuestionText,
             QuestionType = dto.QuestionType,
             CorrectAnswer = dto.QuestionType == "Text" ? dto.CorrectAnswer : null,
-            LearnMaterialId = materialId
+            LearnMaterialId = materialId,
+            Points = dto.Points
         };
 
         await _questionRepo.CreateAsync(question);

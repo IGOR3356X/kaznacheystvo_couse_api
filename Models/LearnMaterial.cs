@@ -19,6 +19,8 @@ public partial class LearnMaterial
 
     public string? Code { get; set; }
 
+    public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+
     public virtual Module? Module { get; set; }
 
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();

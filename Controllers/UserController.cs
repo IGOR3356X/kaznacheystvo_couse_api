@@ -18,12 +18,14 @@ public class UserController:ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Администратор")]
     public async Task<IActionResult> GetAllUsers([FromQuery] QueryObject queryObject)
     {
         return Ok(await _userService.GetUsersAsync(queryObject));
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<IActionResult> GetUserById(int id)
     {
         var IsExist = await _userService.GetUserByIdAsync(id);
@@ -32,6 +34,7 @@ public class UserController:ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Администратор")]
     public async Task<IActionResult> AddUser([FromBody] CreateUserDTO user)
     {
         if(!ModelState.IsValid)
@@ -42,6 +45,7 @@ public class UserController:ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<IActionResult> UpdateUser(int id, [FromForm] UpdateUserDTO user)
     {
         if(!ModelState.IsValid)
@@ -61,6 +65,7 @@ public class UserController:ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Администратор")]
     public async Task<IActionResult> DeleteUser(int id)
     {
         var isExist = await _userService.DeleteUserAsync(id);

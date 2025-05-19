@@ -2,6 +2,7 @@
 using KaznacheystvoCourse.DTO.LearnMaterial;
 using KaznacheystvoCourse.DTO.Module;
 using KaznacheystvoCourse.Interfaces.ISevices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KaznacheystvoCourse.Controllers;
@@ -17,22 +18,24 @@ public class ModulesController: ControllerBase
         _moduleService = moduleService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<PaginatedResponse<ModuleDto>>> GetModulesPaginated(
-        [FromQuery] QueryObject query)
+    // [HttpGet]
+    // public async Task<ActionResult<PaginatedResponse<ModuleDto>>> GetModulesPaginated(
+    //     [FromQuery] QueryObject query)
+    // {
+    //     var result = await _moduleService.GetModulesPaginatedAsync(query);
+    //     return Ok(result);
+    // }
+    //
+    [HttpGet("[action]")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
+    public async Task<ActionResult<IEnumerable<ModuleDto>>> GetModulesByCourseId([FromQuery]int courseId,int userId)
     {
-        var result = await _moduleService.GetModulesPaginatedAsync(query);
-        return Ok(result);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ModuleDto>> GetModuleById(int id)
-    {
-        var module = await _moduleService.GetModuleByIdAsync(id);
-        return module != null ? Ok(module) : NotFound();
+        var modules = await _moduleService.GetModulesByCourseIdAsync(courseId,userId);
+        return Ok(modules);
     }
 
     [HttpPost]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<ActionResult<ModuleDto>> CreateModule(CreateUpdateModuleDto moduleDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -40,7 +43,7 @@ public class ModulesController: ControllerBase
         try
         {
             var createdModule = await _moduleService.CreateModuleAsync(moduleDto);
-            return CreatedAtAction(nameof(GetModuleById), new { id = createdModule.Id }, createdModule);
+            return CreatedAtAction(nameof(GetModulesByCourseId), new { id = createdModule.Id }, createdModule);
         }
         catch (ArgumentException ex)
         {
@@ -49,6 +52,7 @@ public class ModulesController: ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> UpdateModule(int id, CreateUpdateModuleDto moduleDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -69,6 +73,7 @@ public class ModulesController: ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> DeleteModule(int id)
     {
         await _moduleService.DeleteModuleAsync(id);

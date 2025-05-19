@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using KaznacheystvoCourse.DTO.Comment;
 using KaznacheystvoCourse.DTO.Option;
 using KaznacheystvoCourse.DTO.Question;
 using KaznacheystvoCourse.DTO.User;
+using KaznacheystvoCourse.DTO.UserCourses;
 using KaznacheystvoCourse.Models;
 
 namespace KaznacheystvoCourse.Mapper;
@@ -29,5 +31,17 @@ public class MappingProfile : Profile
 
         CreateMap<CreateQuestionDto, Question>();
         CreateMap<UpdateQuestionDto, Question>();
+        
+        //Comment Mappers
+        CreateMap<Comment, CommentDto>()
+            .ForMember(dest => dest.Author, opt => opt.MapFrom(src => src.User));
+        CreateMap<User, UserInfoDto>();
+        
+        //UserCourses Mappers
+        CreateMap<Course, MaterialDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Header, opt => opt.MapFrom(src => src.Header))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+            .ForMember(dest => dest.IsPublished, opt => opt.MapFrom(src => src.Ispublish));
     }
 }

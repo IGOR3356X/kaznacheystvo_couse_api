@@ -30,6 +30,8 @@ builder.Services.AddScoped<IModuleService, ModuleService>();
 builder.Services.AddScoped<ILearnMaterialService, LearnMaterialService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<ITestService, TestService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IUserMaterialService, UserMaterialService>();
 
 builder.Services.AddCors(options =>
 {
@@ -91,6 +93,16 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigninKey"])),
         ValidateLifetime = true,
     };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Пользователь", policy =>
+        policy.RequireRole("Пользователь"));
+    options.AddPolicy("Администратор", policy =>
+        policy.RequireRole("Администратор"));
+    options.AddPolicy("Модератор", policy =>
+        policy.RequireRole("Модератор"));
 });
 
 builder.Services.AddControllers();

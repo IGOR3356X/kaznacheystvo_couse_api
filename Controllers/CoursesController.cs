@@ -1,6 +1,7 @@
 ﻿using KaznacheystvoCourse.DTO;
 using KaznacheystvoCourse.DTO.Course;
 using KaznacheystvoCourse.Interfaces.ISevices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KaznacheystvoCourse.Controllers;
@@ -16,14 +17,16 @@ public class CoursesController:ControllerBase
         _courseService = courseService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<PaginatedResponse<CourseDto>>> GetCoursesPaginated( [FromQuery] QueryObject query)
+    [HttpGet("progress/{id:int}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
+    public async Task<ActionResult<PaginatedResponse<CourseDto>>> GetCoursesPaginated([FromQuery] QueryObject query,[FromRoute]int id)
     {
-        var result = await _courseService.GetAllCoursesAsync(query);
+        var result = await _courseService.GetAllCoursesAsync(query,id);
         return Ok(result);
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<ActionResult<CourseDto>> GetCourseById(int id)
     {
         var course = await _courseService.GetCourseByIdAsync(id);
@@ -31,6 +34,7 @@ public class CoursesController:ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<ActionResult<CourseDto>> CreateCourse(CreateUpdateCourseDto courseDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -40,6 +44,7 @@ public class CoursesController:ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> UpdateCourse(int id, CreateUpdateCourseDto courseDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -56,6 +61,7 @@ public class CoursesController:ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> DeleteCourse(int id)
     {
         await _courseService.DeleteCourseAsync(id);

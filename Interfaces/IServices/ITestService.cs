@@ -6,5 +6,6 @@ public interface ITestService
 {
     Task<TestResultDto> SubmitTestAnswersAsync(int userId, SubmitTestDto dto);
     Task<TestResultDto> GetTestResultAsync(int scoreId);
+    Task<IEnumerable<UserAttemptDto>> GetUserAttemptsForMaterialAsync(int userId, int materialId);
     Task<IEnumerable<UserAttemptDto>> GetAllResponsesForMaterialAsync(int materialId);
 }

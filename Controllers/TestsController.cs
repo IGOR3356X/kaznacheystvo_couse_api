@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using KaznacheystvoCourse.DTO.Answer;
 using KaznacheystvoCourse.Interfaces.ISevices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KaznacheystvoCourse.Controllers;
@@ -20,6 +21,7 @@ public class TestsController:ControllerBase
     }
 
     [HttpPost("submit")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<IActionResult> SubmitTest([FromBody] SubmitTestDto dto)
     {
         if (!ModelState.IsValid)
@@ -40,26 +42,39 @@ public class TestsController:ControllerBase
         }
     }
 
-    [HttpGet("results/{scoreId}")]
-    public async Task<IActionResult> GetTestResult(int scoreId)
+    [HttpGet("material/GetUserAttempts")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
+    public async Task<ActionResult<IEnumerable<UserAttemptDto>>> GetUserAttempts([FromQuery]int userId,int materialId)
+    {
+        try
+        {
+            var attempts = await _testService.GetUserAttemptsForMaterialAsync(userId, materialId);
+            return Ok(attempts);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+    
+    [HttpGet("result/{scoreId}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
+    public async Task<ActionResult<TestResultDto>> GetTestResult(int scoreId)
     {
         try
         {
             var result = await _testService.GetTestResultAsync(scoreId);
+            
             return Ok(result);
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error getting test result {scoreId}");
-            return StatusCode(500, "Internal server error");
+            return NotFound(ex.Message);
         }
     }
     
     [HttpGet("material/{materialId}/responses")]
+    [Authorize(Roles = "Администратор,Модератор")]
     public async Task<IActionResult> GetAllResponsesForMaterial(int materialId)
     {
         try

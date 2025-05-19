@@ -13,5 +13,9 @@ public partial class Comment
 
     public DateTime CreatedDateTime { get; set; }
 
+    public int LearnMaterialId { get; set; }
+
+    public virtual LearnMaterial LearnMaterial { get; set; } = null!;
+
     public virtual User User { get; set; } = null!;
 }
