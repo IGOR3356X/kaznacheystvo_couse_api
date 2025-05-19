@@ -6,6 +6,7 @@ using KaznacheystvoCourse.DTO.User;
 using KaznacheystvoCourse.Interfaces.ISevices;
 using KaznacheystvoCourse.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace KaznacheystvoCalendar.Services;
 
@@ -23,13 +24,13 @@ public class UserService : IUserService
     }
     public async Task<PaginatedResponse<GetAllUserDTO>> GetUsersAsync(QueryObject query)
     {
-        var users = _repository.GetQueryable();
-        
+        var users = _repository.GetQueryable()
+            .Include(u => u.Role);
         if (!string.IsNullOrEmpty(query.Search))
         {
             // Применяем фильтрацию по всем полям, которые вы хотите включить в поиск
             var searchLower = query.Search.ToLower();
-            users = users.Where(r =>
+            users = (IIncludableQueryable<User, Role>)users.Where(r =>
                 r.Id.ToString().ToLower().Contains(searchLower) ||
                 r.Login.ToLower().Contains(searchLower) ||
                 r.FullName.ToLower().Contains(searchLower)

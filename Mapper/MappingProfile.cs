@@ -14,7 +14,9 @@ public class MappingProfile : Profile
     {
         //User Mappers
         CreateMap<CreateUserDTO, User>();
-        CreateMap<User, GetAllUserDTO>();
+        CreateMap<User, GetAllUserDTO>()
+            .ForMember(x=> x.Role, opt => opt
+                .MapFrom(x=> x.Role.Name));
         CreateMap<User, GetUserDTO>()
             .ForMember(act => act.Role, opt => opt
                 .MapFrom(src => src.Role.Name));
