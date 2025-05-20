@@ -42,12 +42,13 @@ public class TestsController:ControllerBase
         }
     }
 
-    [HttpGet("material/GetUserAttempts")]
+    [HttpGet("material/GetUserAttempts/{materialId:int}")]
     [Authorize(Roles = "Пользователь,Администратор,Модератор")]
-    public async Task<ActionResult<IEnumerable<UserAttemptDto>>> GetUserAttempts([FromQuery]int userId,int materialId)
+    public async Task<ActionResult<IEnumerable<UserAttemptDto>>> GetUserAttempts([FromRoute]int materialId)
     {
         try
         {
+            var userId = int.Parse(User.Claims.First(claim => claim.Type == "Id").Value);
             var attempts = await _testService.GetUserAttemptsForMaterialAsync(userId, materialId);
             return Ok(attempts);
         }

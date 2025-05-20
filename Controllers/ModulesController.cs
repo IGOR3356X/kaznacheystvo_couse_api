@@ -26,10 +26,11 @@ public class ModulesController: ControllerBase
     //     return Ok(result);
     // }
     //
-    [HttpGet("[action]")]
+    [HttpGet("{courseId:int}")]
     [Authorize(Roles = "Пользователь,Администратор,Модератор")]
-    public async Task<ActionResult<IEnumerable<ModuleDto>>> GetModulesByCourseId([FromQuery]int courseId,int userId)
+    public async Task<ActionResult<IEnumerable<ModuleDto>>> GetModulesByCourseId([FromRoute]int courseId)
     {
+        var userId = int.Parse(User.Claims.First(claim => claim.Type == "Id").Value);
         var modules = await _moduleService.GetModulesByCourseIdAsync(courseId,userId);
         return Ok(modules);
     }

@@ -30,7 +30,8 @@ public class UserMaterialsController:ControllerBase
     [Authorize(Roles = "Пользователь,Администратор,Модератор")]
     public async Task<IActionResult> AddMaterial([FromBody] AddMaterialRequest request)
     {
-        await _materialService.AddMaterialToUserAsync(request.UserId, request);
+        var userId = int.Parse(User.Claims.First(claim => claim.Type == "Id").Value);
+        await _materialService.AddMaterialToUserAsync(userId,request);
         return Ok(new { Message = "Курс успешно добавлен" });
     }
 }
