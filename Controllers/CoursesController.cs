@@ -24,6 +24,15 @@ public class CoursesController:ControllerBase
         var result = await _courseService.GetAllCoursesAsync(query,id);
         return Ok(result);
     }
+    
+    [HttpGet("progress/secretCourses")]
+    [Authorize(Roles = "Администратор,Модератор")]
+    public async Task<ActionResult<PaginatedResponse<CourseDto>>> GetSecretCoursesPaginated([FromQuery] QueryObject query)
+    {
+        var userId = int.Parse(User.Claims.First(claim => claim.Type == "Id").Value);
+        var result = await _courseService.GetSecretCoursesAsync(query,userId);
+        return Ok(result);
+    }
 
     [HttpGet("{id}")]
     [Authorize(Roles = "Пользователь,Администратор,Модератор")]

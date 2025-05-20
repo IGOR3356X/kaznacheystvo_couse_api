@@ -92,6 +92,80 @@ public class CourseService : ICourseService
             Items = courseDtos
         };
     }
+    
+    public async Task<PaginatedResponse<CourseDto>> GetSecretCoursesAsync(QueryObject query, int userId)
+    {
+        // Базовый запрос для всех курсов
+        var coursesQuery = _courseRepository.GetQueryable()
+            .Where(x=> x.Ispublish == false)
+            .Include(c => c.Modules)
+            .ThenInclude(m => m.LearnMaterials);
+
+        // Фильтрация по поиску
+        if (!string.IsNullOrEmpty(query.Search))
+        {
+            var searchLower = query.Search.ToLower();
+            coursesQuery = (IIncludableQueryable<Course, ICollection<LearnMaterial>>)coursesQuery.Where(c =>
+                c.Header.ToLower().Contains(searchLower) ||
+                c.Description.ToLower().Contains(searchLower));
+        }
+
+        // Пагинация
+        var totalCount = await coursesQuery.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalCount / query.PageSize);
+
+        var courses = await coursesQuery
+            .OrderByDescending(c => c.Id)
+            .Skip((query.PageNumber - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync();
+
+        // Получаем ВСЕ материалы всех курсов
+        var allMaterialIds = courses
+            .SelectMany(c => c.Modules)
+            .SelectMany(m => m.LearnMaterials)
+            .Select(lm => lm.Id)
+            .Distinct()
+            .ToList();
+
+        // Получаем завершенные материалы текущего пользователя
+        var completedMaterials = await _scoreRepository.GetQueryable()
+            .Where(s => s.UserId == userId && allMaterialIds.Contains(s.LearnMaterialId))
+            .Select(s => s.LearnMaterialId)
+            .Distinct()
+            .ToListAsync();
+
+        var completedSet = new HashSet<int>(completedMaterials);
+
+        // Маппинг курсов с прогрессом
+        var courseDtos = courses.Select(course =>
+        {
+            var totalMaterials = course.Modules
+                .Sum(m => m.LearnMaterials.Count);
+
+            var completed = course.Modules
+                .SelectMany(m => m.LearnMaterials)
+                .Count(lm => completedSet.Contains(lm.Id));
+
+            return new CourseDto
+            {
+                Id = course.Id,
+                Header = course.Header,
+                Description = course.Description,
+                IsPublished = course.Ispublish,
+                Progress = totalMaterials > 0
+                    ? (int)Math.Round((double)completed / totalMaterials * 100)
+                    : 0
+            };
+        }).ToList();
+
+        return new PaginatedResponse<CourseDto>
+        {
+            TotalCount = totalCount,
+            TotalPages = totalPages,
+            Items = courseDtos
+        };
+    }
 
     public async Task<CourseDto?> GetCourseByIdAsync(int id)
     {

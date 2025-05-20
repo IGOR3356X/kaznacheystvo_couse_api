@@ -25,6 +25,8 @@ public class UserMaterialsController:ControllerBase
         var materials = await _materialService.GetUserMaterialsAsync(userId);
         return Ok(materials);
     }
+    
+    
 
     [HttpPost("add-material")]
     [Authorize(Roles = "Пользователь,Администратор,Модератор")]
