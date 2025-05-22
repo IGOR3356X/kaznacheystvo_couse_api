@@ -9,7 +9,7 @@ public partial class LearnMaterial
 
     public string Header { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
 
     public string? File { get; set; }
 

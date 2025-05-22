@@ -62,11 +62,11 @@ public class LearnMaterialService: ILearnMaterialService
         var gg = await _moduleRepo.GetByIdAsync(materialDto.ModuleId.Value);
         
         material.Header = materialDto.Header;
-        material.Description = materialDto.Description;
-        material.File = materialDto.File != null ? await _s3Service.UploadFileAsync(materialDto.File, gg.Header) : null;
-        material.ModuleId = materialDto.ModuleId;
-        material.Video = materialDto.Video;
-        material.Code = materialDto.Code;
+        material.Description = materialDto.Description ?? materialDto.Description;
+        material.ModuleId = materialDto.ModuleId ?? material.ModuleId;
+        material.File = materialDto.File != null ? await _s3Service.UploadFileAsync(materialDto.File, gg.Id.ToString()) : material.File;
+        material.Video = materialDto.Video ?? material.Video;
+        material.Code = materialDto.Code ?? material.Code;
 
         await _materialRepo.UpdateAsync(material);
     }

@@ -37,17 +37,15 @@ public class QuestionsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Администратор,Модератор")]
-    public async Task<ActionResult<QuestionDto>> CreateQuestion(
-        int materialId,
-        [FromBody] CreateQuestionDto dto)
+    public async Task<ActionResult<QuestionDto>> CreateQuestion([FromBody] CreateQuestionDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         try
         {
-            var question = await _questionService.CreateQuestionAsync(materialId, dto);
+            var question = await _questionService.CreateQuestionAsync(dto.MaterialId, dto);
             return CreatedAtAction(nameof(GetQuestion), 
-                new { materialId, id = question.Id }, question);
+                new { id = question.Id }, question);
         }
         catch (ArgumentException ex)
         {

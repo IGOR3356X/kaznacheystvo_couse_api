@@ -28,13 +28,23 @@ public class ModulesController: ControllerBase
     //
     [HttpGet("{courseId:int}")]
     [Authorize(Roles = "Пользователь,Администратор,Модератор")]
+    [ActionName("GetModulesByCourseId")]
     public async Task<ActionResult<IEnumerable<ModuleDto>>> GetModulesByCourseId([FromRoute]int courseId)
     {
         var userId = int.Parse(User.Claims.First(claim => claim.Type == "Id").Value);
         var modules = await _moduleService.GetModulesByCourseIdAsync(courseId,userId);
         return Ok(modules);
     }
-
+    
+    [HttpGet("target/{moduleId:int}")]
+    [Authorize(Roles = "Пользователь,Администратор,Модератор")]
+    [ActionName("GetModuleById")] // Важно для CreatedAtAction
+    public async Task<IActionResult> GetModuleById([FromRoute] int moduleId)
+    {
+        var module = await _moduleService.GetModuleByIdAsync(moduleId);
+        return Ok(module);
+    }
+    
     [HttpPost]
     [Authorize(Roles = "Администратор,Модератор")]
     public async Task<ActionResult<ModuleDto>> CreateModule(CreateUpdateModuleDto moduleDto)
@@ -44,7 +54,11 @@ public class ModulesController: ControllerBase
         try
         {
             var createdModule = await _moduleService.CreateModuleAsync(moduleDto);
-            return CreatedAtAction(nameof(GetModulesByCourseId), new { id = createdModule.Id }, createdModule);
+            return CreatedAtAction(
+                nameof(GetModuleById), // Правильное имя действия
+                new { moduleId = createdModule.Id }, // Совпадение с параметром метода
+                createdModule
+            );
         }
         catch (ArgumentException ex)
         {

@@ -60,7 +60,7 @@ public class ModuleService:IModuleService
     public async Task<IEnumerable<ModuleDto>> GetModulesByCourseIdAsync(int courseId,int userId)
     {
         var modules = await _moduleRepository.GetQueryable()
-            .Include(m => m.LearnMaterials)
+            .Include(m => m.LearnMaterials.OrderBy(lm => lm.Id))
             .Where(m => m.CourseId == courseId)
             .ToListAsync();
 
@@ -80,6 +80,15 @@ public class ModuleService:IModuleService
         var completedMaterialsSet = new HashSet<int>(completedMaterials);
 
         return modules.Select(m => MapToDto(m, completedMaterialsSet));
+    }
+    
+    public async Task<ModuleDto> GetModuleByIdAsync(int id)
+    {
+        var module = await _moduleRepository.GetQueryable()
+            .Include(m => m.LearnMaterials)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        return module == null ? null : MapToDto(module);
     }
 
     public async Task<ModuleDto> CreateModuleAsync(CreateUpdateModuleDto moduleDto)

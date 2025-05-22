@@ -114,6 +114,7 @@ public class QuestionService : IQuestionService
         question.QuestionText = dto.QuestionText;
         question.QuestionType = dto.QuestionType;
         question.CorrectAnswer = dto.QuestionType == "Text" ? dto.CorrectAnswer : null;
+        question.Points = dto.Points;
 
         // Delete old options and answers
         await _correctAnswerRepo.DeleteRangeAsync(question.CorrectAnswers);
