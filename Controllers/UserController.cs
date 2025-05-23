@@ -35,10 +35,10 @@ public class UserController:ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Администратор")]
-    public async Task<IActionResult> AddUser([FromBody] CreateUserDTO user)
+    public async Task<IActionResult> AddUser([FromForm] CreateUserDTO user)
     {
         if(!ModelState.IsValid)
-            return BadRequest(new {message = "Вы неправильно заполнили поля, обратите внимание на поля телефона и почты"});
+            return BadRequest(new {message = "Вы неправильно заполнили поля, обратите внимание на поле почты. Минимальная длинна логина и пароля 1 символ"});
         var createdUser = await _userService.CreateUserAsync(user);
         if(createdUser == null) return BadRequest(new { message = "Этот логин уже занят" });
         return Ok(new {message =  $"Пользователь с id = {createdUser.Id} успешно создан"});

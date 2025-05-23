@@ -1,8 +1,9 @@
-﻿namespace KaznacheystvoCourse.DTO.Authorization;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace KaznacheystvoCourse.DTO.Authorization;
 
 public class AuthDTO
 {
-    public string? Login { get; set; }
-
-    public string? Password { get; set; }
+    [MinLength(1)] public string? Login { get; set; }
+    [MinLength(1)] public string? Password { get; set; }
 }

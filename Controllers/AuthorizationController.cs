@@ -19,11 +19,15 @@ public class AuthorizationController : Controller
     [HttpPost("api/login")]
     public async Task<IActionResult> Login([FromBody]AuthDTO auth)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new { message = "Логин или пароль не могут быть пустыми" });
+        }
         var user = await _userService.LoginUserAsync(auth);
 
         if (user == null)
         {
-            return Unauthorized(new {message = "Username not found and/or password"});
+            return Unauthorized(new {message = "Пользователь не найден или пароль указан не правильно"});
         }
 
         return Ok(
